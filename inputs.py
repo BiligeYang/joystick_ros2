@@ -101,7 +101,10 @@ EVENT_SIZE = struct.calcsize(EVENT_FORMAT)
 
 SPECIAL_DEVICES = (
     ("Raspberry Pi Sense HAT Joystick",
-     "/dev/input/by-id/gpio-Raspberry_Pi_Sense_HAT_Joystick-event-kbd"),)
+     "/dev/input/by-id/gpio-Raspberry_Pi_Sense_HAT_Joystick-event-kbd"),
+    ("SHANWAN Android Gamepad",
+     "/dev/input/event1"),
+    )
 
 XINPUT_MAPPING = (
     (1, 0x11),
@@ -2010,20 +2013,30 @@ class InputDevice(object):
             self._character_device_path = os.path.realpath(device_path)
         self._character_file = None
 
+        #hardcode
+        # self.name = 'Sony Computer Entertainment Wireless Controller'
+        # self.name = 'Microsoft X-Box 360 pad'
         if WIN or MAC:
             self.__pipe = None
             self._listener = None
         else:
             with open("/sys/class/input/%s/device/name" %
-                      self.get_char_name()) as name_file:
-                self.name = name_file.read().strip()
+                self.get_char_name()) as name_file:
+                    self.name = name_file.read().strip()
 
     def _get_path_infomation(self):
         """Get useful infomation from the device path."""
-        long_identifier = self._device_path.split('/')[4]
-        protocol, remainder = long_identifier.split('-', 1)
-        identifier, _, device_type = remainder.rsplit('-', 2)
-        return (protocol, identifier, device_type)
+        if self._device_path == "/dev/input/event1":
+            protocol = "protocol"
+            identifier = "identifier"
+            device_type = "devicetype"
+            return (protocol, identifier, device_type)
+        else:
+            long_identifier = self._device_path.split('/')[4]
+            protocol, remainder = long_identifier.split('-', 1)
+            identifier, _, device_type = remainder.rsplit('-', 2)
+            return (protocol, identifier, device_type)
+
 
     def get_char_name(self):
         """Get short version of char device name."""
@@ -2509,7 +2522,10 @@ class DeviceManager(object):
     def _parse_device_path(self, device_path, char_path_override=None):
         """Parse each device and add to the approriate list."""
         try:
-            device_type = device_path.rsplit('-', 1)[1]
+            if device_path == '/dev/input/event1': #hard coding in the joystick path
+                device_type = 'joystick'
+            else:
+                device_type = device_path.rsplit('-', 1)[1]
         except IndexError:
             warn("The following device path was skipped as it could "
                  "not be parsed: %s" % device_path, RuntimeWarning)

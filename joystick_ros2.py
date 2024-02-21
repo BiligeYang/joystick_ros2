@@ -23,6 +23,40 @@ from sensor_msgs.msg import Joy
 from std_msgs.msg import Header
 from inputs import devices, UnpluggedError
 
+#Custom
+# SHANWAN Android Gamepad
+SAG_CODE_MAP = {
+    'ABS_X': 0,
+    'ABS_Y': 1,
+    'ABS_Z': 2,
+    'ABS_RZ': 3,
+    'ABS_HAT0X': 4,
+    'ABS_HAT0Y': 5,
+    'ABS_BRAKE': 6,
+    'ABS_GAS': 7,
+    'BTN_SOUTH': 0,
+    'BTN_EAST': 1,
+    'BTN_NORTH': 2,
+    'BTN_WEST': 3,
+    'BTN_TL': 4,
+    'BTN_TR': 5,
+    'BTN_TL2': 6,
+    'BTN_TR2':7,
+    'BTN_SELECT': 8,
+    'BTN_START':9
+    }
+
+SAG_VALUE_MAP = {
+    0: (0, 255),
+    1: (0, 255),
+    2: (0, 255),
+    3: (0, 255),
+    4: (-1, 1),
+    5: (-1, 1),
+    6: (0,255),
+    7: (0, 255)
+}
+
 # Microsoft X-Box 360 pad
 XINPUT_CODE_MAP = {
     'ABS_X': 0,
@@ -162,8 +196,10 @@ XONE_VALUE_MAP = {
 JOYSTICK_CODE_VALUE_MAP = {
     'Microsoft X-Box 360 pad': (XINPUT_CODE_MAP, XINPUT_VALUE_MAP),
     'Sony Computer Entertainment Wireless Controller': (PS4_CODE_MAP, PS4_VALUE_MAP),
+    'Sony Interactive Entertainment Wireless Controller': (PS4_CODE_MAP, PS4_VALUE_MAP),
     'Logitech Gamepad F710': (F710_CODE_MAP, F710_VALUE_MAP),
-    'Microsoft X-Box One pad': (XONE_CODE_MAP, XONE_VALUE_MAP)
+    'Microsoft X-Box One pad': (XONE_CODE_MAP, XONE_VALUE_MAP),
+    'SHANWAN Android Gamepad':(SAG_CODE_MAP,SAG_VALUE_MAP)
 }
 
 class JoystickRos2(Node):
@@ -182,11 +218,14 @@ class JoystickRos2(Node):
         self.joy = Joy()
         self.joy.header = Header()
         self.joy.header.frame_id = ''
-        self.joy.axes = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-        self.joy.buttons = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        # self.joy.axes = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        self.joy.axes = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0] #reduced to joystick
+        # self.joy.buttons = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        self.joy.buttons = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
 
         # Joy publisher
-        self.publisher_ = self.create_publisher(Joy, 'joy')
+        self.publisher_ = self.create_publisher(Joy, 'joy', 10)
 
         # logic params
         self.last_event = None
@@ -221,6 +260,7 @@ class JoystickRos2(Node):
 
             # detected joystick is not keymapped yet
             if (gamepad.name not in JOYSTICK_CODE_VALUE_MAP):
+                print(gamepad.name)
                 print('Sorry, joystick type not supported yet! Please plug in supported joystick')
                 time.sleep(1)
                 device_manager.find_devices()
